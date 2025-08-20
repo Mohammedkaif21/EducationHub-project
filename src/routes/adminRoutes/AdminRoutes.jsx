@@ -1,15 +1,17 @@
-import { BrowserRouter,Routes,Route } from 'react-router'
+import { BrowserRouter, Routes, Route } from 'react-router'
 import AdminLogin from '../../pages/admin/AdminLogin';
-import Dashboard from '../../pages/admin/dashboard';
+import ForgotPassword from '../../pages/admin/forgotPassword';
+import ResetPassword from '../../pages/admin/ResetPassword';
 
-const AdminRoutes =()=>{
+const AdminRoutes = () => {
 
     return (
         <div className=''>
             <BrowserRouter>
                 <Routes>
-                    <Route path='/' element={<Dashboard/>}/>
-                    <Route path='/login' element={<AdminLogin />} />
+                    <Route path='/' element={<AdminLogin />} />
+                    <Route path='/forgot-password' element={<ForgotPassword />} />
+                    <Route path='/reset-password' element={<ResetPassword />} />
                 </Routes>
             </BrowserRouter>
         </div>
