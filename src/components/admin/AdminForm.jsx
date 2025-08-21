@@ -35,6 +35,8 @@ const AdminForm = () => {
             const res = await api.post('/admin/v1/user/login', { email, password, captcha });
             localStorage.setItem("accessToken", res.data.accessToken);
             console.log("Login Successfully", res.data);
+            setEmail("");
+            setPassword("");
             toast.success("Login Successfully")
             navigate("/admin/dashboard");
 

@@ -5,6 +5,7 @@ import api from "../../utils/api";
 import ReCAPTCHA from "react-google-recaptcha";
 import { LuEye, LuEyeOff } from "react-icons/lu";
 import { toast } from "react-toastify";
+import { ResetValidationSchema } from "../../validations/validation";
 
 const ResetPassword = ()=>{
     const location = useLocation();
@@ -32,6 +33,17 @@ const ResetPassword = ()=>{
             return;
         }
         try{
+            await ResetValidationSchema.validate({
+                newPassword: password, confirmPassword, captchaToken }, { abortEarly: false }
+            );
+        }catch(err){
+            if (err.name === "Validation Error") {
+                const formErrors = {};
+                err.inner.forEach((e) => (formErrors[e.path] = e.message));
+                setError(formErrors)
+            }
+        }
+        try{
             const res = await api.post(`/admin/v1/user/reset-password`, {
                 token,
                 newPassword: password,
@@ -45,11 +57,13 @@ const ResetPassword = ()=>{
                 withCredentials: true
             });
             setMessage(res.data.message);
+            setPassword("");
+            setConfirmPassword("");
+            setCaptchaToken("");
             toast.success("Password reset successfully")
             navigate("/");
         }catch(err){
-            setError(err.response?.data?.errors || "Sonmething went wrong");
-
+           setError(err.response?.data?.errors || "something went wrong")
         }
     }
     return(
