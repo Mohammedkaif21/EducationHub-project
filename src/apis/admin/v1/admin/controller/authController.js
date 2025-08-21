@@ -8,6 +8,7 @@ const axios = require('axios');
 const sendMail = require('../utils/mailer.js');
 const jwt = require('jsonwebtoken');
 const { where } = require('sequelize');
+const verifyRecaptcha = require('../utils/reCptcha.js');
 require('dotenv').config()
 
 const login = async (req, res) => {
@@ -83,8 +84,12 @@ const refreshToken = async (req, res) => {
 }
 
 const forgotPassword = async (req, res) => {
-    const { email } = req.body;
     try {
+        const { email,captcha } = req.body;
+        const isHuman = await verifyRecaptcha(captcha);
+        if(!isHuman){
+            return res.status(400).json({message: "Captcha verification failed"})
+        }
         const user = await User.findOne({ where: { email } });
         if (!user) {
             return res.status(401).json({ message: "User not found" });
@@ -107,15 +112,19 @@ const forgotPassword = async (req, res) => {
 
 }
 const resetPassword = async (req, res) => {
-    const { token, newPassword } = req.body;
     try {
+        const { token, newPassword,captcha } = req.body;
 
+        const isHuman = await verifyRecaptcha(captcha);
+        if (!isHuman) {
+            return res.status(400).json({ message: "Captcha verification failed" });
+        }
         let decoded;
         try {
             decoded = verifyResetToken(token)
         } catch (err) {
             console.error("Invalid reset token", err);
-            return res.status(400).json({ message: "Invalid or expired token" });
+            return res.status(401).json({ message: "Invalid or expired token" });
         }
         // console.log(token);
 

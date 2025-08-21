@@ -5,6 +5,7 @@ dotenv.config();
 const adminRoutes = require('./src/apis/admin/v1')
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended:true }))
 app.use(cors({
     origin: "http://localhost:5173",
     credentials: true
