@@ -2,6 +2,9 @@ import { useState } from "react"
 import { AdminLayout } from "../../components/admin/AdminLayout"
 import { useLocation, useNavigate, useParams } from "react-router";
 import api from "../../utils/api";
+import ReCAPTCHA from "react-google-recaptcha";
+import { LuEye, LuEyeOff } from "react-icons/lu";
+import { toast } from "react-toastify";
 
 const ResetPassword = ()=>{
     const location = useLocation();
@@ -11,12 +14,19 @@ const ResetPassword = ()=>{
     const [confirmPassword,setConfirmPassword] = useState("");
     const [error,setError] = useState("");
     const [message,setMessage] = useState("");
+    const [captchaToken,setCaptchaToken] = useState("");
+    const [showPassword,setShowPassword] = useState(false);
+    const [showConfirm,setShowConfirm] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async(e)=>{
         e.preventDefault();
         setError("");
         setMessage("");
+        if(!captchaToken){
+            setMessage("Please verify the captcha");
+            return;
+        }
         if(password != confirmPassword){
             setError("Password does not match");
             return;
@@ -24,11 +34,21 @@ const ResetPassword = ()=>{
         try{
             const res = await api.post(`/admin/v1/user/reset-password`, {
                 token,
-                newPassword: password});
+                newPassword: password,
+                confirmPassword: confirmPassword,
+                captcha: captchaToken
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                withCredentials: true
+            });
             setMessage(res.data.message);
+            toast.success("Password reset successfully")
             navigate("/");
         }catch(err){
-            setError(err.response?.data?.error || "Server error");
+            setError(err.response?.data?.errors || "Sonmething went wrong");
 
         }
     }
@@ -46,13 +66,22 @@ const ResetPassword = ()=>{
                     {error && <p className="text-red-500 mb-4">{error}</p>}
                     {message && <p className="text-green-500 mb-4">{message}</p>}
                     <form onSubmit={handleSubmit} className="mb-4">
-                        <div className="my-3">
+                        <div className="my-3 relative">
                             <label className="text-sm">New Password</label>
-                            <input type="password" placeholder="Enter new password" value={password} onChange={(e)=>setPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                            <input type={showPassword ? "text" :"password"} placeholder="Enter new password" value={password} onChange={(e)=>setPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                            <div className="absolute right-2 top-8   cursor-pointer" onClick={()=>setShowPassword(!showPassword)}>
+                                {showPassword ?<LuEye size={22}/> : <LuEyeOff size={22}/> }
+                            </div>
                         </div>
-                        <div className="my-3">
+                        <div className="my-3 relative">
                             <label className="text-sm">Confirm Password</label>
-                            <input type="password" placeholder="Enter password" value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                            <input type={showConfirm ? "text" : "password"} placeholder="Enter password" value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                            <div className="absolute right-2 top-8 cursor-pointer" onClick={() => setShowConfirm(!showConfirm)}>
+                                {showConfirm ? <LuEye size={22} /> : <LuEyeOff size={22} />}
+                            </div>
+                        </div>
+                        <div className="mt-6 mb-2">
+                            <ReCAPTCHA sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY} onChange={(token)=>setCaptchaToken(token)} />
                         </div>
                         <button className="w-full bg-orange-500 hover:bg-orange-600 mt-3 cursor-pointer text-white font-semibold py-2 rounded-lg">Send</button>
                     </form>
