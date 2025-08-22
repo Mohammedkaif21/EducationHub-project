@@ -19,7 +19,7 @@ const AdminForm = () => {
         setError("");
         try {
             await ValidationSchema.validate(
-                { email, password },
+                { email, password,captcha },
                 { abortEarly: false }
             )
             console.log({
