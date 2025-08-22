@@ -24,38 +24,24 @@ const ResetPassword = ()=>{
         e.preventDefault();
         setError("");
         setMessage("");
-        if(!captchaToken){
-            setMessage("Please verify the captcha");
-            return;
-        }
-        if(password != confirmPassword){
-            setError("Password does not match");
-            return;
-        }
+        
         try{
             await ResetValidationSchema.validate({
-                newPassword: password, confirmPassword, captchaToken }, { abortEarly: false }
+                newPassword: password, confirmPassword, captchaToken },
+                { abortEarly: false }
             );
-        }catch(err){
-            if (err.name === "Validation Error") {
-                const formErrors = {};
-                err.inner.forEach((e) => (formErrors[e.path] = e.message));
-                setError(formErrors)
-            }
-        }
-        try{
             const res = await api.post(`/admin/v1/user/reset-password`, {
                 token,
                 newPassword: password,
                 confirmPassword: confirmPassword,
                 captcha: captchaToken
             },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                withCredentials: true
-            });
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    withCredentials: true
+                });
             setMessage(res.data.message);
             setPassword("");
             setConfirmPassword("");
@@ -63,8 +49,17 @@ const ResetPassword = ()=>{
             toast.success("Password reset successfully")
             navigate("/");
         }catch(err){
-           setError(err.response?.data?.errors || "something went wrong")
+            if (err.name === "ValidationError") {
+                const formErrors = {};
+                err.inner.forEach((e) => {
+                    formErrors[e.path] = e.message
+                })
+            setError(formErrors)
+            } else {
+                setError({ general: err.response?.data?.errors || "something went wrong" })
+            }
         }
+        
     }
     return(
         <div>
@@ -77,7 +72,6 @@ const ResetPassword = ()=>{
                     </div>
                     <h1 className="text-2xl font-bold">Reset Password</h1>
                     <h2 className="text-gray-500 text-sm mt-1">Enter new Password</h2>
-                    {error && <p className="text-red-500 mb-4">{error}</p>}
                     {message && <p className="text-green-500 mb-4">{message}</p>}
                     <form onSubmit={handleSubmit} className="mb-4">
                         <div className="my-3 relative">
@@ -87,6 +81,7 @@ const ResetPassword = ()=>{
                                 {showPassword ?<LuEye size={22}/> : <LuEyeOff size={22}/> }
                             </div>
                         </div>
+                            {error.newPassword && <p className="text-red-500  rounded-lg  bg-red-200 p-2 mt-1 mb-4">{error.newPassword}</p>}
                         <div className="my-3 relative">
                             <label className="text-sm">Confirm Password</label>
                             <input type={showConfirm ? "text" : "password"} placeholder="Enter password" value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
@@ -94,7 +89,10 @@ const ResetPassword = ()=>{
                                 {showConfirm ? <LuEye size={22} /> : <LuEyeOff size={22} />}
                             </div>
                         </div>
-                        <div className="mt-6 mb-2">
+                        {error.confirmPassword && <p className="text-red-500  rounded-lg  bg-red-200 p-2 mt-1 mb-4">{error.confirmPassword}</p>}
+                        {error.captcha &&
+                            <p className="text-red-500 rounded-lg  bg-red-200 p-3 text-md">{error.captcha}</p>}
+                        <div className="mt-2 mb-2">
                             <ReCAPTCHA sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY} onChange={(token)=>setCaptchaToken(token)} />
                         </div>
                         <button className="w-full bg-orange-500 hover:bg-orange-600 mt-3 cursor-pointer text-white font-semibold py-2 rounded-lg">Send</button>

@@ -11,16 +11,12 @@ const AdminForm = () => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [captcha, setcaptchaToken] = useState(null);
-    const [showPassword,setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
-        if (!captcha) {
-            alert('Please complete the recaptcha');
-            return;
-        }
         try {
             await ValidationSchema.validate(
                 { email, password },
@@ -38,16 +34,24 @@ const AdminForm = () => {
             setEmail("");
             setPassword("");
             toast.success("Login Successfully")
-            navigate("/admin/dashboard");
+            navigate("/dashboard");
 
         } catch (err) {
             if (err.name === "ValidationError") {
-                setError(err.errors.join(" | "))
-            } else if (err.response && err.response.data) {
-                setError(err.response.data.message);
+                const fieldErrors = {};
+                if(err.inner && err.inner.length > 0){
+                    err.inner.forEach((e)=>{
+                        fieldErrors[e.path] = e.message;
+                    })
+                }else if(err.path){
+                    fieldErrors[err.path] = err.message;
+                }
+                setError(fieldErrors)
+            } else if (err.response && err.response?.data) {
+                setError({ general: err.response.data.message });
                 console.log(err);
             } else {
-                setError("An error occurred. Please try again.");
+                setError({ general: "An error occurred. Please try again." });
                 console.log(err);
 
             }
@@ -63,7 +67,6 @@ const AdminForm = () => {
                 </div>
                 <h2 className="text-gray-500 text-sm">Welcome Back</h2>
                 <h1 className="text-2xl font-bold mb-6 ">Log In to your Account</h1>
-                {error && <p className="text-red-500 mb-4">{error}</p>}
                 <form className="mb-4" onSubmit={handleSubmit}>
                     <div className="my-2">
                         <label className="text-sm">Email Address</label>
@@ -71,15 +74,17 @@ const AdminForm = () => {
                             setEmail(e.target.value);
                             setError("");
                         }} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        {error.email && <p className="text-red-500 rounded-lg  bg-red-200 p-2 mt-1 ">{error.email}</p>}
                     </div>
                     <div className="my-3 relative">
                         <label className="text-sm">Password</label>
-                        <input type={showPassword ? "text":"password"} placeholder="Enter password" onChange={(e) => {
+                        <input type={showPassword ? "text" : "password"} placeholder="Enter password" onChange={(e) => {
                             setPassword(e.target.value)
                             setError("")
                         }} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                        <div className="absolute right-2 top-8   cursor-pointer" onClick={()=>setShowPassword(!showPassword)}>
-                            {showPassword ?<LuEye size={22}/> : <LuEyeOff size={22}/> }
+                        {error.password && <p className="text-red-500 rounded-lg  bg-red-200 p-2 mt-1  mb-4">{error.password}</p>}
+                        <div className="absolute right-2 top-8   cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <LuEye size={22} /> : <LuEyeOff size={22} />}
                         </div>
                     </div>
                     <div className="flex justify-between text-xs mt-4 mb-5">
@@ -89,6 +94,9 @@ const AdminForm = () => {
                         </label>
                         <Link to="/forgot-password" className="text-blue-600 hover:underline">Forget Password?</Link>
                     </div>
+                    {error.general && <p className="text-red-500 rounded-lg  bg-red-200 p-2 text-sm">{error.general}</p>}
+                    {error.captcha && 
+                        <p className="text-red-500 rounded-lg  bg-red-200 p-3 text-sm">{error.captcha}</p>}
                     <div className=" justify-center pt-3">
                         <ReCAPTCHA sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY} onChange={(token) => setcaptchaToken(token)} />
                     </div>
