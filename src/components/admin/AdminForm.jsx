@@ -19,7 +19,7 @@ const AdminForm = () => {
         setError("");
         try {
             await ValidationSchema.validate(
-                { email, password },
+                { email, password,captcha },
                 { abortEarly: false }
             )
             console.log({
@@ -94,7 +94,7 @@ const AdminForm = () => {
                         </label>
                         <Link to="/forgot-password" className="text-blue-600 hover:underline">Forget Password?</Link>
                     </div>
-                    {error.general && <p className="text-red-500 rounded-lg  bg-red-200 p-2 text-sm">{error.general}</p>}
+                    {/* {error.general && <p className="text-red-500 rounded-lg  bg-red-200 p-2 text-sm">{error.general}</p>} */}
                     {error.captcha && 
                         <p className="text-red-500 rounded-lg  bg-red-200 p-3 text-sm">{error.captcha}</p>}
                     <div className=" justify-center pt-3">
